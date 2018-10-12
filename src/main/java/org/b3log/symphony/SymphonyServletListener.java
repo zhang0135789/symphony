@@ -23,11 +23,9 @@ import org.apache.commons.lang.StringUtils;
 import org.b3log.latke.Keys;
 import org.b3log.latke.Latkes;
 import org.b3log.latke.event.EventManager;
-import org.b3log.latke.ioc.LatkeBeanManager;
-import org.b3log.latke.ioc.Lifecycle;
+import org.b3log.latke.ioc.BeanManager;
 import org.b3log.latke.logging.Level;
 import org.b3log.latke.logging.Logger;
-import org.b3log.latke.model.User;
 import org.b3log.latke.repository.jdbc.JdbcRepository;
 import org.b3log.latke.servlet.AbstractServletListener;
 import org.b3log.latke.util.*;
@@ -40,7 +38,6 @@ import org.b3log.symphony.model.UserExt;
 import org.b3log.symphony.repository.OptionRepository;
 import org.b3log.symphony.repository.UserRepository;
 import org.b3log.symphony.service.InitMgmtService;
-import org.b3log.symphony.service.UserMgmtService;
 import org.b3log.symphony.service.UserQueryService;
 import org.b3log.symphony.util.Symphonys;
 import org.json.JSONObject;
@@ -58,7 +55,7 @@ import java.util.Locale;
  *
  * @author <a href="http://88250.b3log.org">Liang Ding</a>
  * @author Bill Ho
- * @version 3.19.10.15, Sep 15, 2018
+ * @version 3.19.10.18, Sep 27, 2018
  * @since 0.2.0
  */
 public final class SymphonyServletListener extends AbstractServletListener {
@@ -71,28 +68,26 @@ public final class SymphonyServletListener extends AbstractServletListener {
     /**
      * Symphony version.
      */
-    public static final String VERSION = "3.4.0";
+    public static final String VERSION = "3.4.1";
 
     /**
-     * JSONO print indent factor.
+     * JSON print indent factor.
      */
     public static final int JSON_PRINT_INDENT_FACTOR = 4;
 
     /**
      * Bean manager.
      */
-    private LatkeBeanManager beanManager;
+    private BeanManager beanManager;
 
     @Override
     public void contextInitialized(final ServletContextEvent servletContextEvent) {
         Stopwatchs.start("Context Initialized");
+        Latkes.USER_AGENT = Symphonys.USER_AGENT_BOT;
         Latkes.setScanPath("org.b3log.symphony");
         super.contextInitialized(servletContextEvent);
 
-        final String skinDirName = Symphonys.get("skinDirName");
-        Latkes.loadSkin(skinDirName);
-
-        beanManager = Lifecycle.getBeanManager();
+        beanManager = BeanManager.getInstance();
 
         final InitMgmtService initMgmtService = beanManager.getReference(InitMgmtService.class);
         initMgmtService.initSym();
@@ -160,16 +155,6 @@ public final class SymphonyServletListener extends AbstractServletListener {
 
     @Override
     public void sessionDestroyed(final HttpSessionEvent httpSessionEvent) {
-        final HttpSession session = httpSessionEvent.getSession();
-
-        final Object userObj = session.getAttribute(User.USER);
-        if (null != userObj) { // User logout
-            final JSONObject user = (JSONObject) userObj;
-
-            final UserMgmtService userMgmtService = beanManager.getReference(UserMgmtService.class);
-            userMgmtService.updateOnlineStatus(user.optString(Keys.OBJECT_ID), "", false, true);
-        }
-
         super.sessionDestroyed(httpSessionEvent);
     }
 
@@ -206,8 +191,7 @@ public final class SymphonyServletListener extends AbstractServletListener {
                     && !StringUtils.containsIgnoreCase(userAgentStr, "MetaURI")
                     && !StringUtils.containsIgnoreCase(userAgentStr, "Feed")
                     && !StringUtils.containsIgnoreCase(userAgentStr, "okhttp")
-                    && !StringUtils.containsIgnoreCase(userAgentStr, "BND")
-                    && !StringUtils.containsIgnoreCase(userAgentStr, "B3log")) {
+                    && !StringUtils.containsIgnoreCase(userAgentStr, "Sym")) {
                 LOGGER.log(Level.WARN, "Unknown client [UA=" + userAgentStr + ", remoteAddr="
                         + Requests.getRemoteAddr(httpServletRequest) + ", URI=" + httpServletRequest.getRequestURI() + "]");
             }
@@ -231,12 +215,6 @@ public final class SymphonyServletListener extends AbstractServletListener {
 
         httpServletRequest.setAttribute(Common.IS_MOBILE, BrowserType.MOBILE_BROWSER == browserType);
 
-        // Gets the session of this request
-        final HttpSession session = httpServletRequest.getSession();
-        LOGGER.log(Level.TRACE, "Gets a session [id={0}, remoteAddr={1}, User-Agent={2}, isNew={3}]",
-                session.getId(), httpServletRequest.getRemoteAddr(),
-                httpServletRequest.getHeader(Common.USER_AGENT), session.isNew());
-
         resolveSkinDir(httpServletRequest);
     }
 
@@ -252,7 +230,7 @@ public final class SymphonyServletListener extends AbstractServletListener {
             if (null != isStaticObj && !(Boolean) isStaticObj) {
                 Stopwatchs.end();
 
-                final int threshold = Symphonys.getInt("perfromance.threshold");
+                final int threshold = Symphonys.getInt("performance.threshold");
                 if (0 < threshold) {
                     final long elapsed = Stopwatchs.getElapsed("Request initialized [" + request.getRequestURI() + "]");
                     if (elapsed >= threshold) {
@@ -276,6 +254,11 @@ public final class SymphonyServletListener extends AbstractServletListener {
 
         request.setAttribute(Keys.TEMAPLTE_DIR_NAME, (Boolean) request.getAttribute(Common.IS_MOBILE)
                 ? "mobile" : "classic");
+        String templateDirName = (Boolean) request.getAttribute(Common.IS_MOBILE) ? "mobile" : "classic";
+        request.setAttribute(Keys.TEMAPLTE_DIR_NAME, templateDirName);
+
+        final HttpSession httpSession = request.getSession();
+        httpSession.setAttribute(Keys.TEMAPLTE_DIR_NAME, templateDirName);
 
         try {
             final UserQueryService userQueryService = beanManager.getReference(UserQueryService.class);
@@ -331,11 +314,14 @@ public final class SymphonyServletListener extends AbstractServletListener {
                 }
             }
 
-            request.setAttribute(Keys.TEMAPLTE_DIR_NAME, (Boolean) request.getAttribute(Common.IS_MOBILE)
-                    ? user.optString(UserExt.USER_MOBILE_SKIN) : user.optString(UserExt.USER_SKIN));
+            final String skin = (Boolean) request.getAttribute(Common.IS_MOBILE)
+                    ? user.optString(UserExt.USER_MOBILE_SKIN) : user.optString(UserExt.USER_SKIN);
+
+            request.setAttribute(Keys.TEMAPLTE_DIR_NAME, skin);
+            httpSession.setAttribute(Keys.TEMAPLTE_DIR_NAME, skin);
             request.setAttribute(UserExt.USER_AVATAR_VIEW_MODE, user.optInt(UserExt.USER_AVATAR_VIEW_MODE));
 
-            request.setAttribute(User.USER, user);
+            request.setAttribute(Common.CURRENT_USER, user);
 
             final Locale locale = Locales.getLocale(user.optString(UserExt.USER_LANGUAGE));
             Locales.setLocale(locale);

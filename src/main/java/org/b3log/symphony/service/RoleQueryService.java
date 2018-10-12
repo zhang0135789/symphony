@@ -18,7 +18,7 @@
 package org.b3log.symphony.service;
 
 import org.b3log.latke.Keys;
-import org.b3log.latke.ioc.inject.Inject;
+import org.b3log.latke.ioc.Inject;
 import org.b3log.latke.logging.Level;
 import org.b3log.latke.logging.Logger;
 import org.b3log.latke.model.Pagination;
@@ -362,7 +362,7 @@ public class RoleQueryService {
         pagination.put(Pagination.PAGINATION_PAGE_NUMS, pageNums);
 
         final JSONArray data = result.optJSONArray(Keys.RESULTS);
-        final List<JSONObject> roles = CollectionUtils.<JSONObject>jsonArrayToList(data);
+        final List<JSONObject> roles = CollectionUtils.jsonArrayToList(data);
 
         try {
             for (final JSONObject role : roles) {

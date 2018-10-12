@@ -18,7 +18,7 @@
 package org.b3log.symphony.service;
 
 import org.b3log.latke.Keys;
-import org.b3log.latke.ioc.inject.Inject;
+import org.b3log.latke.ioc.Inject;
 import org.b3log.latke.logging.Level;
 import org.b3log.latke.logging.Logger;
 import org.b3log.latke.model.User;
@@ -130,7 +130,7 @@ public class TagMgmtService {
                 if (0 == tag.optInt(Tag.TAG_REFERENCE_CNT) // article ref cnt
                         && 0 == domainTagRepository.getByTagId(tagId, 1, Integer.MAX_VALUE)
                         .optJSONArray(Keys.RESULTS).length() // domainTagRefCnt
-                        ) {
+                ) {
                     final JSONArray userTagRels = userTagRepository.getByTagId(tagId, 1, Integer.MAX_VALUE)
                             .optJSONArray(Keys.RESULTS);
                     if (1 == userTagRels.length()

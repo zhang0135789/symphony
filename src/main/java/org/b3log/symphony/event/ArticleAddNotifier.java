@@ -22,10 +22,8 @@ import org.apache.commons.lang.time.DateUtils;
 import org.b3log.latke.Keys;
 import org.b3log.latke.event.AbstractEventListener;
 import org.b3log.latke.event.Event;
-import org.b3log.latke.event.EventException;
-import org.b3log.latke.ioc.inject.Inject;
-import org.b3log.latke.ioc.inject.Named;
-import org.b3log.latke.ioc.inject.Singleton;
+import org.b3log.latke.ioc.Inject;
+import org.b3log.latke.ioc.Singleton;
 import org.b3log.latke.logging.Level;
 import org.b3log.latke.logging.Logger;
 import org.b3log.latke.model.Pagination;
@@ -53,7 +51,6 @@ import java.util.Set;
  * @version 1.3.4.16, Aug 6, 2018
  * @since 0.2.0
  */
-@Named
 @Singleton
 public class ArticleAddNotifier extends AbstractEventListener<JSONObject> {
 
@@ -93,7 +90,7 @@ public class ArticleAddNotifier extends AbstractEventListener<JSONObject> {
     private RoleQueryService roleQueryService;
 
     @Override
-    public void action(final Event<JSONObject> event) throws EventException {
+    public void action(final Event<JSONObject> event) {
         final JSONObject data = event.getData();
         LOGGER.log(Level.TRACE, "Processing an event [type={0}, data={1}]", event.getType(), data);
 

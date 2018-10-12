@@ -19,7 +19,7 @@ package org.b3log.symphony.processor;
 
 import org.b3log.latke.Keys;
 import org.b3log.latke.Latkes;
-import org.b3log.latke.ioc.inject.Inject;
+import org.b3log.latke.ioc.Inject;
 import org.b3log.latke.model.Pagination;
 import org.b3log.latke.servlet.HTTPRequestContext;
 import org.b3log.latke.servlet.HTTPRequestMethod;
@@ -27,9 +27,8 @@ import org.b3log.latke.servlet.annotation.After;
 import org.b3log.latke.servlet.annotation.Before;
 import org.b3log.latke.servlet.annotation.RequestProcessing;
 import org.b3log.latke.servlet.annotation.RequestProcessor;
-import org.b3log.latke.servlet.renderer.freemarker.AbstractFreeMarkerRenderer;
+import org.b3log.latke.servlet.renderer.AbstractFreeMarkerRenderer;
 import org.b3log.latke.util.Paginator;
-import org.b3log.latke.util.Strings;
 import org.b3log.symphony.model.*;
 import org.b3log.symphony.processor.advice.AnonymousViewCheck;
 import org.b3log.symphony.processor.advice.PermissionGrant;
@@ -110,7 +109,7 @@ public class DomainProcessor {
         final int pageNum = Paginator.getPage(request);
         int pageSize = Symphonys.getInt("indexArticlesCnt");
 
-        final JSONObject user = userQueryService.getCurrentUser(request);
+        final JSONObject user = (JSONObject) request.getAttribute(Common.CURRENT_USER);
         if (null != user) {
             pageSize = user.optInt(UserExt.USER_LIST_PAGE_SIZE);
 

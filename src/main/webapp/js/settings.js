@@ -395,7 +395,8 @@ var Settings = {
     })) {
       var requestJSONObject = {
         "userName": $("#pointTransferUserName").val(),
-        "amount": $("#pointTransferAmount").val()
+        "amount": $("#pointTransferAmount").val(),
+        "memo": $("#pointTransferMemo").val()
       };
 
       $.ajax({
@@ -415,6 +416,7 @@ var Settings = {
             $("#pointTransferTip").addClass("succ").removeClass("error").html('<ul><li>' + Label.transferSuccLabel + '</li></ul>');
             $("#pointTransferUserName").val('');
             $("#pointTransferAmount").val('');
+            $("#pointTransferMemo").val('');
           } else {
             $("#pointTransferTip").addClass("error").removeClass("succ").html('<ul><li>' + result.msg + '</li></ul>');
           }
@@ -732,7 +734,7 @@ var Settings = {
    */
   makeAllNotificationsRead: function () {
     $.ajax({
-      url: Label.servePath + "/notification/all-read",
+      url: Label.servePath + "/notifications/all-read",
       type: "GET",
       cache: false,
       success: function (result, textStatus) {
@@ -747,7 +749,7 @@ var Settings = {
    */
   removeNotifications: function (type) {
     $.ajax({
-      url: Label.servePath + '/notification/remove/' + type,
+      url: Label.servePath + '/notifications/remove/' + type,
       type: 'GET',
       cache: false,
       success: function (result) {

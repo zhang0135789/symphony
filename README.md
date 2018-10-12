@@ -28,9 +28,7 @@
 * [宽客网](http://www.cnq.net)
 * [贵州IT](http://www.gzit.info)
 * [超级产品经理](https://imspm.com)
-* [蚂蚁程序猿](http://bbs.itmayiedu.com)
-* [北纬极客](https://begeek.bwae.org)
-* [架构师小秘圈](http://www.3xmq.com)
+* [许昌IT圈](http://www.xcitq.com)
 
 商业版：
 
@@ -54,6 +52,7 @@
 * [《提问的智慧》精读注解版](https://hacpai.com/article/1536377163156)
 * [Sym 安装指南](https://hacpai.com/article/1486188905847)
 * [Sym 配置项说明](https://hacpai.com/article/1524715380797)
+* [Sym 贡献指南](https://github.com/b3log/symphony/blob/master/CONTRIBUTING.md)
 
 ## 授权
 

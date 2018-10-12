@@ -23,7 +23,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.b3log.latke.Keys;
 import org.b3log.latke.Latkes;
-import org.b3log.latke.ioc.inject.Inject;
+import org.b3log.latke.ioc.Inject;
 import org.b3log.latke.logging.Level;
 import org.b3log.latke.logging.Logger;
 import org.b3log.latke.model.User;
@@ -35,7 +35,7 @@ import org.b3log.latke.servlet.annotation.After;
 import org.b3log.latke.servlet.annotation.Before;
 import org.b3log.latke.servlet.annotation.RequestProcessing;
 import org.b3log.latke.servlet.annotation.RequestProcessor;
-import org.b3log.latke.servlet.renderer.freemarker.AbstractFreeMarkerRenderer;
+import org.b3log.latke.servlet.renderer.AbstractFreeMarkerRenderer;
 import org.b3log.latke.util.Locales;
 import org.b3log.latke.util.Requests;
 import org.b3log.symphony.model.*;
@@ -187,7 +187,7 @@ public class LoginProcessor {
             return;
         }
 
-        JSONObject user = (JSONObject) request.getAttribute(User.USER);
+        JSONObject user = (JSONObject) request.getAttribute(Common.CURRENT_USER);
         final String userId = user.optString(Keys.OBJECT_ID);
 
         int step = requestJSONObject.optInt(UserExt.USER_GUIDE_STEP);
@@ -222,7 +222,7 @@ public class LoginProcessor {
     @After(adviceClass = {CSRFToken.class, PermissionGrant.class, StopwatchEndAdvice.class})
     public void showGuide(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response)
             throws Exception {
-        final JSONObject currentUser = (JSONObject) request.getAttribute(User.USER);
+        final JSONObject currentUser = (JSONObject) request.getAttribute(Common.CURRENT_USER);
         final int step = currentUser.optInt(UserExt.USER_GUIDE_STEP);
         if (UserExt.USER_GUIDE_STEP_FIN == step) {
             response.sendRedirect(Latkes.getServePath());
@@ -232,7 +232,7 @@ public class LoginProcessor {
 
         final AbstractFreeMarkerRenderer renderer = new SkinRenderer(request);
         context.setRenderer(renderer);
-        renderer.setTemplateName("/verify/guide.ftl");
+        renderer.setTemplateName("verify/guide.ftl");
 
         final Map<String, Object> dataModel = renderer.getDataModel();
         dataModel.put(Common.CURRENT_USER, currentUser);
@@ -283,8 +283,7 @@ public class LoginProcessor {
     @After(adviceClass = {PermissionGrant.class, StopwatchEndAdvice.class})
     public void showLogin(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response)
             throws Exception {
-        if (null != userQueryService.getCurrentUser(request)
-                || userMgmtService.tryLogInWithCookie(request, response)) {
+        if (null != request.getAttribute(Common.CURRENT_USER)) {
             response.sendRedirect(Latkes.getServePath());
 
             return;
@@ -302,7 +301,7 @@ public class LoginProcessor {
             referer = Latkes.getServePath();
         }
 
-        renderer.setTemplateName("/verify/login.ftl");
+        renderer.setTemplateName("verify/login.ftl");
 
         final Map<String, Object> dataModel = renderer.getDataModel();
         dataModel.put(Common.GOTO, referer);
@@ -316,13 +315,11 @@ public class LoginProcessor {
      * @param context  the specified context
      * @param request  the specified request
      * @param response the specified response
-     * @throws Exception exception
      */
     @RequestProcessing(value = "/forget-pwd", method = HTTPRequestMethod.GET)
     @Before(adviceClass = StopwatchStartAdvice.class)
     @After(adviceClass = {PermissionGrant.class, StopwatchEndAdvice.class})
-    public void showForgetPwd(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response)
-            throws Exception {
+    public void showForgetPwd(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response) {
         final AbstractFreeMarkerRenderer renderer = new SkinRenderer(request);
         context.setRenderer(renderer);
         final Map<String, Object> dataModel = renderer.getDataModel();
@@ -397,7 +394,7 @@ public class LoginProcessor {
         final JSONObject verifycode = verifycodeQueryService.getVerifycode(code);
         if (null == verifycode) {
             dataModel.put(Keys.MSG, langPropsService.get("verifycodeExpiredLabel"));
-            renderer.setTemplateName("/error/custom.ftl");
+            renderer.setTemplateName("error/custom.ftl");
         } else {
             renderer.setTemplateName("verify/reset-pwd.ftl");
 
@@ -448,7 +445,7 @@ public class LoginProcessor {
             context.renderTrueResult();
             LOGGER.info("User [email=" + user.optString(User.USER_EMAIL) + "] reseted password");
 
-            Sessions.login(request, response, user, true);
+            Sessions.login(response, userId, true);
         } catch (final ServiceException e) {
             final String msg = langPropsService.get("resetPwdLabel") + " - " + e.getMessage();
             LOGGER.log(Level.ERROR, msg + "[name={0}, email={1}]", name, email);
@@ -470,8 +467,7 @@ public class LoginProcessor {
     @After(adviceClass = {PermissionGrant.class, StopwatchEndAdvice.class})
     public void showRegister(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response)
             throws Exception {
-        if (null != userQueryService.getCurrentUser(request)
-                || userMgmtService.tryLogInWithCookie(request, response)) {
+        if (null != request.getAttribute(Common.CURRENT_USER)) {
             response.sendRedirect(Latkes.getServePath());
 
             return;
@@ -506,7 +502,7 @@ public class LoginProcessor {
             final JSONObject verifycode = verifycodeQueryService.getVerifycode(code);
             if (null == verifycode) {
                 dataModel.put(Keys.MSG, langPropsService.get("verifycodeExpiredLabel"));
-                renderer.setTemplateName("/error/custom.ftl");
+                renderer.setTemplateName("error/custom.ftl");
             } else {
                 renderer.setTemplateName("verify/register2.ftl");
 
@@ -517,7 +513,7 @@ public class LoginProcessor {
                 if (UserExt.USER_STATUS_C_VALID == user.optInt(UserExt.USER_STATUS)
                         || UserExt.NULL_USER_NAME.equals(user.optString(User.USER_NAME))) {
                     dataModel.put(Keys.MSG, langPropsService.get("userExistLabel"));
-                    renderer.setTemplateName("/error/custom.ftl");
+                    renderer.setTemplateName("error/custom.ftl");
                 } else {
                     referral = StringUtils.substringAfter(code, "r=");
                     if (StringUtils.isNotBlank(referral)) {
@@ -634,7 +630,7 @@ public class LoginProcessor {
 
             userMgmtService.addUser(user);
 
-            Sessions.login(request, response, user, false);
+            Sessions.login(response, userId, false);
 
             final String ip = Requests.getRemoteAddr(request);
             userMgmtService.updateOnlineStatus(user.optString(Keys.OBJECT_ID), ip, true, true);
@@ -646,10 +642,10 @@ public class LoginProcessor {
                     // Point
                     pointtransferMgmtService.transfer(Pointtransfer.ID_C_SYS, userId,
                             Pointtransfer.TRANSFER_TYPE_C_INVITED_REGISTER,
-                            Pointtransfer.TRANSFER_SUM_C_INVITE_REGISTER, referralId, System.currentTimeMillis());
+                            Pointtransfer.TRANSFER_SUM_C_INVITE_REGISTER, referralId, System.currentTimeMillis(), "");
                     pointtransferMgmtService.transfer(Pointtransfer.ID_C_SYS, referralId,
                             Pointtransfer.TRANSFER_TYPE_C_INVITE_REGISTER,
-                            Pointtransfer.TRANSFER_SUM_C_INVITE_REGISTER, userId, System.currentTimeMillis());
+                            Pointtransfer.TRANSFER_SUM_C_INVITE_REGISTER, userId, System.currentTimeMillis(), "");
 
                     final JSONObject notification = new JSONObject();
                     notification.put(Notification.NOTIFICATION_USER_ID, referralId);
@@ -672,7 +668,7 @@ public class LoginProcessor {
                 if (StringUtils.isNotBlank(icGeneratorId) && !Pointtransfer.ID_C_SYS.equals(icGeneratorId)) {
                     pointtransferMgmtService.transfer(Pointtransfer.ID_C_SYS, icGeneratorId,
                             Pointtransfer.TRANSFER_TYPE_C_INVITECODE_USED,
-                            Pointtransfer.TRANSFER_SUM_C_INVITECODE_USED, userId, System.currentTimeMillis());
+                            Pointtransfer.TRANSFER_SUM_C_INVITECODE_USED, userId, System.currentTimeMillis(), "");
 
                     final JSONObject notification = new JSONObject();
                     notification.put(Notification.NOTIFICATION_USER_ID, icGeneratorId);
@@ -768,7 +764,7 @@ public class LoginProcessor {
 
             final String userPassword = user.optString(User.USER_PASSWORD);
             if (userPassword.equals(requestJSONObject.optString(User.USER_PASSWORD))) {
-                final String token = Sessions.login(request, response, user, requestJSONObject.optBoolean(Common.REMEMBER_LOGIN));
+                final String token = Sessions.login(response, userId, requestJSONObject.optBoolean(Common.REMEMBER_LOGIN));
 
                 final String ip = Requests.getRemoteAddr(request);
                 userMgmtService.updateOnlineStatus(user.optString(Keys.OBJECT_ID), ip, true, true);
@@ -798,17 +794,19 @@ public class LoginProcessor {
      * Logout.
      *
      * @param context the specified context
+     * @param request the specified request
      * @throws IOException io exception
      */
-    @RequestProcessing(value = {"/logout"}, method = HTTPRequestMethod.GET)
-    public void logout(final HTTPRequestContext context) throws IOException {
-        final HttpServletRequest httpServletRequest = context.getRequest();
+    @RequestProcessing(value = "/logout", method = HTTPRequestMethod.GET)
+    public void logout(final HTTPRequestContext context, final HttpServletRequest request) throws IOException {
+        final JSONObject user = (JSONObject) request.getAttribute(Common.CURRENT_USER);
+        if (null != user) {
+            Sessions.logout(user.optString(Keys.OBJECT_ID), context.getResponse());
+        }
 
-        Sessions.logout(httpServletRequest, context.getResponse());
-
-        String destinationURL = httpServletRequest.getParameter(Common.GOTO);
-        if (!StringUtils.startsWith(destinationURL, Latkes.getServePath())) {
-            destinationURL = "/";
+        String destinationURL = request.getParameter(Common.GOTO);
+        if (StringUtils.isBlank(destinationURL)) {
+            destinationURL = request.getHeader("referer");
         }
 
         context.getResponse().sendRedirect(destinationURL);

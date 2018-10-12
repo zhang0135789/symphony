@@ -17,14 +17,14 @@
  */
 package org.b3log.symphony.processor;
 
-import org.b3log.latke.ioc.inject.Inject;
+import org.b3log.latke.ioc.Inject;
 import org.b3log.latke.servlet.HTTPRequestContext;
 import org.b3log.latke.servlet.HTTPRequestMethod;
 import org.b3log.latke.servlet.annotation.After;
 import org.b3log.latke.servlet.annotation.Before;
 import org.b3log.latke.servlet.annotation.RequestProcessing;
 import org.b3log.latke.servlet.annotation.RequestProcessor;
-import org.b3log.latke.servlet.renderer.freemarker.AbstractFreeMarkerRenderer;
+import org.b3log.latke.servlet.renderer.AbstractFreeMarkerRenderer;
 import org.b3log.symphony.model.Common;
 import org.b3log.symphony.model.UserExt;
 import org.b3log.symphony.processor.advice.AnonymousViewCheck;
@@ -93,16 +93,14 @@ public class TopProcessor {
      * @param context  the specified context
      * @param request  the specified request
      * @param response the specified response
-     * @throws Exception exception
      */
     @RequestProcessing(value = "/top", method = HTTPRequestMethod.GET)
     @Before(adviceClass = {StopwatchStartAdvice.class, AnonymousViewCheck.class})
     @After(adviceClass = {PermissionGrant.class, StopwatchEndAdvice.class})
-    public void showTop(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response)
-            throws Exception {
+    public void showTop(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response) {
         final AbstractFreeMarkerRenderer renderer = new SkinRenderer(request);
         context.setRenderer(renderer);
-        renderer.setTemplateName("/top/index.ftl");
+        renderer.setTemplateName("top/index.ftl");
 
         final Map<String, Object> dataModel = renderer.getDataModel();
         dataModel.put(Common.SELECTED, Common.TOP);
@@ -120,16 +118,14 @@ public class TopProcessor {
      * @param context  the specified context
      * @param request  the specified request
      * @param response the specified response
-     * @throws Exception exception
      */
     @RequestProcessing(value = "/top/link", method = HTTPRequestMethod.GET)
     @Before(adviceClass = {StopwatchStartAdvice.class, AnonymousViewCheck.class})
     @After(adviceClass = {PermissionGrant.class, StopwatchEndAdvice.class})
-    public void showLink(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response)
-            throws Exception {
+    public void showLink(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response) {
         final AbstractFreeMarkerRenderer renderer = new SkinRenderer(request);
         context.setRenderer(renderer);
-        renderer.setTemplateName("/top/link.ftl");
+        renderer.setTemplateName("top/link.ftl");
 
         final Map<String, Object> dataModel = renderer.getDataModel();
         final List<JSONObject> topLinks = linkQueryService.getTopLink(Symphonys.getInt("topCnt"));
@@ -148,16 +144,14 @@ public class TopProcessor {
      * @param context  the specified context
      * @param request  the specified request
      * @param response the specified response
-     * @throws Exception exception
      */
     @RequestProcessing(value = "/top/balance", method = HTTPRequestMethod.GET)
     @Before(adviceClass = {StopwatchStartAdvice.class, AnonymousViewCheck.class})
     @After(adviceClass = {PermissionGrant.class, StopwatchEndAdvice.class})
-    public void showBalance(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response)
-            throws Exception {
+    public void showBalance(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response) {
         final AbstractFreeMarkerRenderer renderer = new SkinRenderer(request);
         context.setRenderer(renderer);
-        renderer.setTemplateName("/top/balance.ftl");
+        renderer.setTemplateName("top/balance.ftl");
 
         final Map<String, Object> dataModel = renderer.getDataModel();
         final int avatarViewMode = (int) request.getAttribute(UserExt.USER_AVATAR_VIEW_MODE);
@@ -177,16 +171,14 @@ public class TopProcessor {
      * @param context  the specified context
      * @param request  the specified request
      * @param response the specified response
-     * @throws Exception exception
      */
     @RequestProcessing(value = "/top/consumption", method = HTTPRequestMethod.GET)
     @Before(adviceClass = {StopwatchStartAdvice.class, AnonymousViewCheck.class})
     @After(adviceClass = {PermissionGrant.class, StopwatchEndAdvice.class})
-    public void showConsumption(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response)
-            throws Exception {
+    public void showConsumption(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response) {
         final AbstractFreeMarkerRenderer renderer = new SkinRenderer(request);
         context.setRenderer(renderer);
-        renderer.setTemplateName("/top/consumption.ftl");
+        renderer.setTemplateName("top/consumption.ftl");
 
         final Map<String, Object> dataModel = renderer.getDataModel();
         final int avatarViewMode = (int) request.getAttribute(UserExt.USER_AVATAR_VIEW_MODE);
@@ -206,15 +198,14 @@ public class TopProcessor {
      * @param context  the specified context
      * @param request  the specified request
      * @param response the specified response
-     * @throws Exception exception
      */
     @RequestProcessing(value = "/top/checkin", method = HTTPRequestMethod.GET)
     @Before(adviceClass = {StopwatchStartAdvice.class, AnonymousViewCheck.class})
     @After(adviceClass = {PermissionGrant.class, StopwatchEndAdvice.class})
-    public void showCheckin(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
+    public void showCheckin(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response) {
         final AbstractFreeMarkerRenderer renderer = new SkinRenderer(request);
         context.setRenderer(renderer);
-        renderer.setTemplateName("/top/checkin.ftl");
+        renderer.setTemplateName("top/checkin.ftl");
 
         final Map<String, Object> dataModel = renderer.getDataModel();
         final int avatarViewMode = (int) request.getAttribute(UserExt.USER_AVATAR_VIEW_MODE);

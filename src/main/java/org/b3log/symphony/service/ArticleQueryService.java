@@ -23,7 +23,7 @@ import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.b3log.latke.Keys;
 import org.b3log.latke.Latkes;
-import org.b3log.latke.ioc.inject.Inject;
+import org.b3log.latke.ioc.Inject;
 import org.b3log.latke.logging.Level;
 import org.b3log.latke.logging.Logger;
 import org.b3log.latke.model.Pagination;
@@ -59,7 +59,7 @@ import java.util.*;
  *
  * @author <a href="http://88250.b3log.org">Liang Ding</a>
  * @author <a href="http://vanessa.b3log.org">Liyuan Li</a>
- * @version 2.28.0.4, Sep 3, 2018
+ * @version 2.28.0.6, Sep 28, 2018
  * @since 0.2.0
  */
 @Service
@@ -158,6 +158,12 @@ public class ArticleQueryService {
      */
     @Inject
     private RewardQueryService rewardQueryService;
+
+    /**
+     * Tag query service.
+     */
+    @Inject
+    private TagQueryService tagQueryService;
 
     /**
      * Gets the question articles with the specified fetch size.
@@ -685,10 +691,8 @@ public class ArticleQueryService {
      * @param article        the specified article
      * @param fetchSize      the specified fetch size
      * @return relevant articles, returns an empty list if not found
-     * @throws ServiceException service exception
      */
-    public List<JSONObject> getRelevantArticles(final int avatarViewMode, final JSONObject article, final int fetchSize)
-            throws ServiceException {
+    public List<JSONObject> getRelevantArticles(final int avatarViewMode, final JSONObject article, final int fetchSize) {
         final String tagsString = article.optString(Article.ARTICLE_TAGS);
         String[] tagTitles = tagsString.split(",");
         final List<String> excludedB3logTitles = new ArrayList<>();
@@ -746,9 +750,10 @@ public class ArticleQueryService {
             organizeArticles(avatarViewMode, ret);
 
             return ret;
-        } catch (final RepositoryException e) {
+        } catch (final Exception e) {
             LOGGER.log(Level.ERROR, "Gets relevant articles failed", e);
-            throw new ServiceException(e);
+
+            return Collections.emptyList();
         }
     }
 
@@ -1213,7 +1218,7 @@ public class ArticleQueryService {
             }
 
             final Set<String> userNames = userQueryService.getUserNames(ret);
-            final JSONObject currentUser = userQueryService.getCurrentUser(request);
+            final JSONObject currentUser = (JSONObject) request.getAttribute(Common.CURRENT_USER);
             final String currentUserName = null == currentUser ? "" : currentUser.optString(User.USER_NAME);
             final String authorName = author.optString(User.USER_NAME);
             if (Article.ARTICLE_TYPE_C_DISCUSSION == articleType && !authorName.equals(currentUserName)) {
@@ -1626,7 +1631,7 @@ public class ArticleQueryService {
 
         JSONObject result;
         try {
-            Stopwatchs.start("Query recent articles");
+            Stopwatchs.start("Query perfect articles");
 
             result = articleRepository.get(query);
         } catch (final RepositoryException e) {
@@ -1792,24 +1797,7 @@ public class ArticleQueryService {
 
         // builds tag objects
         final String tagsStr = article.optString(Article.ARTICLE_TAGS);
-        final String[] tagTitles = tagsStr.split(",");
-
-        final List<JSONObject> tags = new ArrayList<>();
-        for (final String tagTitle : tagTitles) {
-            final JSONObject tag = new JSONObject();
-            tag.put(Tag.TAG_TITLE, tagTitle);
-
-            final String uri = tagRepository.getURIByTitle(tagTitle);
-            if (null != uri) {
-                tag.put(Tag.TAG_URI, uri);
-            } else {
-                tag.put(Tag.TAG_URI, tagTitle);
-
-                tagRepository.getURIByTitle(tagTitle);
-            }
-
-            tags.add(tag);
-        }
+        final List<JSONObject> tags = tagQueryService.buildTagObjs(tagsStr);
         article.put(Article.ARTICLE_T_TAG_OBJS, (Object) tags);
     }
 
@@ -2044,10 +2032,8 @@ public class ArticleQueryService {
      *                ....,
      *                "author": {}
      * @param request the specified request
-     * @throws ServiceException service exception
      */
-    public void processArticleContent(final JSONObject article, final HttpServletRequest request)
-            throws ServiceException {
+    public void processArticleContent(final JSONObject article, final HttpServletRequest request) {
         Stopwatchs.start("Process content");
 
         try {
@@ -2072,7 +2058,7 @@ public class ArticleQueryService {
             String articleContent = article.optString(Article.ARTICLE_CONTENT);
             article.put(Common.DISCUSSION_VIEWABLE, true);
 
-            final JSONObject currentUser = userQueryService.getCurrentUser(request);
+            final JSONObject currentUser = (JSONObject) request.getAttribute(Common.CURRENT_USER);
             final String currentUserName = null == currentUser ? "" : currentUser.optString(User.USER_NAME);
             final String currentRole = null == currentUser ? "" : currentUser.optString(User.USER_ROLE);
             final String authorName = article.optString(Article.ARTICLE_T_AUTHOR_NAME);

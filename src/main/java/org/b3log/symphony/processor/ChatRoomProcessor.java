@@ -20,7 +20,7 @@ package org.b3log.symphony.processor;
 import com.qiniu.util.Auth;
 import org.apache.commons.lang.StringUtils;
 import org.b3log.latke.Keys;
-import org.b3log.latke.ioc.inject.Inject;
+import org.b3log.latke.ioc.Inject;
 import org.b3log.latke.logging.Level;
 import org.b3log.latke.logging.Logger;
 import org.b3log.latke.model.User;
@@ -30,7 +30,7 @@ import org.b3log.latke.servlet.annotation.After;
 import org.b3log.latke.servlet.annotation.Before;
 import org.b3log.latke.servlet.annotation.RequestProcessing;
 import org.b3log.latke.servlet.annotation.RequestProcessor;
-import org.b3log.latke.servlet.renderer.freemarker.AbstractFreeMarkerRenderer;
+import org.b3log.latke.servlet.renderer.AbstractFreeMarkerRenderer;
 import org.b3log.latke.util.Locales;
 import org.b3log.latke.util.Times;
 import org.b3log.symphony.model.*;
@@ -239,7 +239,7 @@ public class ChatRoomProcessor {
         content = Markdowns.toHTML(content);
         content = Markdowns.clean(content, "");
 
-        final JSONObject currentUser = (JSONObject) request.getAttribute(User.USER);
+        final JSONObject currentUser = (JSONObject) request.getAttribute(Common.CURRENT_USER);
         final String userName = currentUser.optString(User.USER_NAME);
 
         final JSONObject msg = new JSONObject();
@@ -297,12 +297,11 @@ public class ChatRoomProcessor {
      * @param context  the specified context
      * @param request  the specified request
      * @param response the specified response
-     * @throws Exception exception
      */
     @RequestProcessing(value = "/cr", method = HTTPRequestMethod.GET)
     @Before(adviceClass = {StopwatchStartAdvice.class, AnonymousViewCheck.class})
     @After(adviceClass = {PermissionGrant.class, StopwatchEndAdvice.class})
-    public void showChatRoom(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response) throws Exception {
+    public void showChatRoom(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response) {
         final AbstractFreeMarkerRenderer renderer = new SkinRenderer(request);
         context.setRenderer(renderer);
         renderer.setTemplateName("chat-room.ftl");

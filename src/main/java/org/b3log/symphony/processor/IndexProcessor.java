@@ -21,7 +21,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.b3log.latke.Keys;
 import org.b3log.latke.Latkes;
-import org.b3log.latke.ioc.inject.Inject;
+import org.b3log.latke.ioc.Inject;
 import org.b3log.latke.logging.Level;
 import org.b3log.latke.logging.Logger;
 import org.b3log.latke.model.Pagination;
@@ -32,7 +32,7 @@ import org.b3log.latke.servlet.annotation.After;
 import org.b3log.latke.servlet.annotation.Before;
 import org.b3log.latke.servlet.annotation.RequestProcessing;
 import org.b3log.latke.servlet.annotation.RequestProcessor;
-import org.b3log.latke.servlet.renderer.freemarker.AbstractFreeMarkerRenderer;
+import org.b3log.latke.servlet.renderer.AbstractFreeMarkerRenderer;
 import org.b3log.latke.util.Locales;
 import org.b3log.latke.util.Paginator;
 import org.b3log.latke.util.Stopwatchs;
@@ -49,7 +49,6 @@ import org.b3log.symphony.service.UserMgmtService;
 import org.b3log.symphony.service.UserQueryService;
 import org.b3log.symphony.util.Emotions;
 import org.b3log.symphony.util.Markdowns;
-import org.b3log.symphony.util.Sessions;
 import org.b3log.symphony.util.Symphonys;
 import org.json.JSONObject;
 
@@ -135,7 +134,7 @@ public class IndexProcessor {
 
         final int pageNum = Paginator.getPage(request);
         int pageSize = Symphonys.getInt("indexArticlesCnt");
-        final JSONObject user = Sessions.currentUser(request);
+        final JSONObject user = (JSONObject) request.getAttribute(Common.CURRENT_USER);
         if (null != user) {
             pageSize = user.optInt(UserExt.USER_LIST_PAGE_SIZE);
 
@@ -217,7 +216,7 @@ public class IndexProcessor {
 
         int pageSize = Symphonys.getInt("indexArticlesCnt");
         final int avatarViewMode = (int) request.getAttribute(UserExt.USER_AVATAR_VIEW_MODE);
-        final JSONObject user = Sessions.currentUser(request);
+        final JSONObject user = (JSONObject) request.getAttribute(Common.CURRENT_USER);
         if (null != user) {
             pageSize = user.optInt(UserExt.USER_LIST_PAGE_SIZE);
 
@@ -263,13 +262,11 @@ public class IndexProcessor {
      * Shows md guide.
      *
      * @param response the specified response
-     * @throws Exception exception
      */
     @RequestProcessing(value = "/guide/markdown", method = HTTPRequestMethod.GET)
     @Before(adviceClass = {StopwatchStartAdvice.class})
     @After(adviceClass = {PermissionGrant.class, StopwatchEndAdvice.class})
-    public void showMDGuide(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response)
-            throws Exception {
+    public void showMDGuide(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response) {
         final AbstractFreeMarkerRenderer renderer = new SkinRenderer(request);
         context.setRenderer(renderer);
         renderer.setTemplateName("other/md-guide.ftl");
@@ -339,7 +336,7 @@ public class IndexProcessor {
         final Map<String, Object> dataModel = renderer.getDataModel();
         final int pageNum = Paginator.getPage(request);
         int pageSize = Symphonys.getInt("indexArticlesCnt");
-        final JSONObject user = userQueryService.getCurrentUser(request);
+        final JSONObject user = (JSONObject) request.getAttribute(Common.CURRENT_USER);
         if (null != user) {
             pageSize = user.optInt(UserExt.USER_LIST_PAGE_SIZE);
 
@@ -433,7 +430,7 @@ public class IndexProcessor {
         final Map<String, Object> dataModel = renderer.getDataModel();
 
         int pageSize = Symphonys.getInt("indexArticlesCnt");
-        final JSONObject user = userQueryService.getCurrentUser(request);
+        final JSONObject user = (JSONObject) request.getAttribute(Common.CURRENT_USER);
         if (null != user) {
             pageSize = user.optInt(UserExt.USER_LIST_PAGE_SIZE);
         }
@@ -476,7 +473,7 @@ public class IndexProcessor {
         final Map<String, Object> dataModel = renderer.getDataModel();
         final int pageNum = Paginator.getPage(request);
         int pageSize = Symphonys.getInt("indexArticlesCnt");
-        final JSONObject user = userQueryService.getCurrentUser(request);
+        final JSONObject user = (JSONObject) request.getAttribute(Common.CURRENT_USER);
         if (null != user) {
             pageSize = user.optInt(UserExt.USER_LIST_PAGE_SIZE);
             if (!UserExt.finshedGuide(user)) {
@@ -531,13 +528,12 @@ public class IndexProcessor {
      * @param context  the specified context
      * @param request  the specified request
      * @param response the specified response
-     * @throws Exception exception
      */
     @RequestProcessing(value = "/b3log", method = HTTPRequestMethod.GET)
     @Before(adviceClass = StopwatchStartAdvice.class)
     @After(adviceClass = {PermissionGrant.class, StopwatchEndAdvice.class})
     public void showB3log(final HTTPRequestContext context,
-                          final HttpServletRequest request, final HttpServletResponse response) throws Exception {
+                          final HttpServletRequest request, final HttpServletResponse response) {
         final AbstractFreeMarkerRenderer renderer = new SkinRenderer(request);
         context.setRenderer(renderer);
         renderer.setTemplateName("other/b3log.ftl");

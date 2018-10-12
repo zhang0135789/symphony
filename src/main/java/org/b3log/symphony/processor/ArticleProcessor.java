@@ -23,7 +23,7 @@ import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.b3log.latke.Keys;
-import org.b3log.latke.ioc.inject.Inject;
+import org.b3log.latke.ioc.Inject;
 import org.b3log.latke.logging.Level;
 import org.b3log.latke.logging.Logger;
 import org.b3log.latke.model.Pagination;
@@ -36,7 +36,7 @@ import org.b3log.latke.servlet.annotation.After;
 import org.b3log.latke.servlet.annotation.Before;
 import org.b3log.latke.servlet.annotation.RequestProcessing;
 import org.b3log.latke.servlet.annotation.RequestProcessor;
-import org.b3log.latke.servlet.renderer.freemarker.AbstractFreeMarkerRenderer;
+import org.b3log.latke.servlet.renderer.AbstractFreeMarkerRenderer;
 import org.b3log.latke.util.Paginator;
 import org.b3log.latke.util.Requests;
 import org.b3log.latke.util.Stopwatchs;
@@ -56,7 +56,6 @@ import org.json.JSONObject;
 import javax.imageio.ImageIO;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
@@ -221,7 +220,7 @@ public class ArticleProcessor {
             return;
         }
 
-        final JSONObject currentUser = (JSONObject) request.getAttribute(User.USER);
+        final JSONObject currentUser = (JSONObject) request.getAttribute(Common.CURRENT_USER);
         final String currentUserId = currentUser.optString(Keys.OBJECT_ID);
         final JSONObject article = articleQueryService.getArticle(id);
         if (null == article) {
@@ -262,7 +261,7 @@ public class ArticleProcessor {
     @Before(adviceClass = {StopwatchStartAdvice.class, LoginCheck.class})
     @After(adviceClass = {StopwatchEndAdvice.class})
     public void checkArticleTitle(final HTTPRequestContext context, final HttpServletRequest request) throws Exception {
-        final JSONObject currentUser = (JSONObject) request.getAttribute(User.USER);
+        final JSONObject currentUser = (JSONObject) request.getAttribute(Common.CURRENT_USER);
         final String currentUserId = currentUser.optString(Keys.OBJECT_ID);
         final JSONObject requestJSONObject = Requests.parseRequestJSONObject(request, context.getResponse());
         String title = requestJSONObject.optString(Article.ARTICLE_TITLE);
@@ -394,7 +393,7 @@ public class ArticleProcessor {
 
         final JSONObject ret = new JSONObject();
         ret.put(Keys.STATUS_CODE, true);
-        ret.put(Common.URL, (Object) url);
+        ret.put(Common.URL, url);
 
         context.renderJSON(ret);
     }
@@ -423,17 +422,15 @@ public class ArticleProcessor {
      * @param context  the specified context
      * @param request  the specified request
      * @param response the specified response
-     * @throws Exception exception
      */
     @RequestProcessing(value = "/pre-post", method = HTTPRequestMethod.GET)
     @Before(adviceClass = {StopwatchStartAdvice.class, LoginCheck.class})
     @After(adviceClass = {CSRFToken.class, PermissionGrant.class, StopwatchEndAdvice.class})
-    public void showPreAddArticle(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response)
-            throws Exception {
+    public void showPreAddArticle(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response) {
         final AbstractFreeMarkerRenderer renderer = new SkinRenderer(request);
         context.setRenderer(renderer);
 
-        renderer.setTemplateName("/home/pre-post.ftl");
+        renderer.setTemplateName("home/pre-post.ftl");
         final Map<String, Object> dataModel = renderer.getDataModel();
 
         dataModel.put(Common.BROADCAST_POINT, Pointtransfer.TRANSFER_SUM_C_ADD_ARTICLE_BROADCAST);
@@ -483,17 +480,14 @@ public class ArticleProcessor {
      * @param context  the specified context
      * @param request  the specified request
      * @param response the specified response
-     * @throws Exception exception
      */
     @RequestProcessing(value = "/post", method = HTTPRequestMethod.GET)
     @Before(adviceClass = {StopwatchStartAdvice.class, LoginCheck.class})
     @After(adviceClass = {CSRFToken.class, PermissionGrant.class, StopwatchEndAdvice.class})
-    public void showAddArticle(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response)
-            throws Exception {
+    public void showAddArticle(final HTTPRequestContext context, final HttpServletRequest request, final HttpServletResponse response) {
         final AbstractFreeMarkerRenderer renderer = new SkinRenderer(request);
         context.setRenderer(renderer);
-
-        renderer.setTemplateName("/home/post.ftl");
+        renderer.setTemplateName("home/post.ftl");
         final Map<String, Object> dataModel = renderer.getDataModel();
 
         // Qiniu file upload authenticate
@@ -512,7 +506,7 @@ public class ArticleProcessor {
         dataModel.put("fileMaxSize", fileMaxSize);
 
         String tags = request.getParameter(Tag.TAGS);
-        final JSONObject currentUser = (JSONObject) request.getAttribute(User.USER);
+        final JSONObject currentUser = (JSONObject) request.getAttribute(Common.CURRENT_USER);
 
         if (StringUtils.isBlank(tags)) {
             tags = "";
@@ -629,8 +623,7 @@ public class ArticleProcessor {
                             final String articleId) throws Exception {
         final AbstractFreeMarkerRenderer renderer = new SkinRenderer(request);
         context.setRenderer(renderer);
-
-        renderer.setTemplateName("/article.ftl");
+        renderer.setTemplateName("article.ftl");
         final Map<String, Object> dataModel = renderer.getDataModel();
 
         final int avatarViewMode = (int) request.getAttribute(UserExt.USER_AVATAR_VIEW_MODE);
@@ -640,11 +633,6 @@ public class ArticleProcessor {
             response.sendError(HttpServletResponse.SC_NOT_FOUND);
 
             return;
-        }
-
-        final HttpSession session = request.getSession(false);
-        if (null != session) {
-            session.setAttribute(Article.ARTICLE_T_ID, articleId);
         }
 
         dataModelService.fillHeaderAndFooter(request, response, dataModel);
@@ -706,7 +694,7 @@ public class ArticleProcessor {
         final int cmtViewMode = Integer.valueOf(cmtViewModeStr);
         dataModel.put(UserExt.USER_COMMENT_VIEW_MODE, cmtViewMode);
 
-        final JSONObject viewer = (JSONObject) request.getAttribute(User.USER);
+        final JSONObject viewer = (JSONObject) request.getAttribute(Common.CURRENT_USER);
         if (null != viewer) {
             livenessMgmtService.incLiveness(viewer.optString(Keys.OBJECT_ID), Liveness.LIVENESS_PV);
         }
@@ -809,8 +797,7 @@ public class ArticleProcessor {
             return;
         }
 
-        final List<JSONObject> niceComments
-                = commentQueryService.getNiceComments(avatarViewMode, cmtViewMode, articleId, 3);
+        final List<JSONObject> niceComments = commentQueryService.getNiceComments(avatarViewMode, cmtViewMode, articleId, 3);
         article.put(Article.ARTICLE_T_NICE_COMMENTS, (Object) niceComments);
 
         double niceCmtScore = Double.MAX_VALUE;
@@ -970,7 +957,7 @@ public class ArticleProcessor {
         article.put(Article.ARTICLE_ANONYMOUS, articleAnonymous);
 
         try {
-            final JSONObject currentUser = (JSONObject) request.getAttribute(User.USER);
+            final JSONObject currentUser = (JSONObject) request.getAttribute(Common.CURRENT_USER);
 
             article.put(Article.ARTICLE_AUTHOR_ID, currentUser.optString(Keys.OBJECT_ID));
 
@@ -1028,7 +1015,7 @@ public class ArticleProcessor {
             return;
         }
 
-        final JSONObject currentUser = (JSONObject) request.getAttribute(User.USER);
+        final JSONObject currentUser = (JSONObject) request.getAttribute(Common.CURRENT_USER);
         if (null == currentUser
                 || !currentUser.optString(Keys.OBJECT_ID).equals(article.optString(Article.ARTICLE_AUTHOR_ID))) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
@@ -1038,8 +1025,7 @@ public class ArticleProcessor {
 
         final AbstractFreeMarkerRenderer renderer = new SkinRenderer(request);
         context.setRenderer(renderer);
-
-        renderer.setTemplateName("/home/post.ftl");
+        renderer.setTemplateName("home/post.ftl");
         final Map<String, Object> dataModel = renderer.getDataModel();
 
         dataModel.put(Article.ARTICLE, article);
@@ -1156,7 +1142,7 @@ public class ArticleProcessor {
         }
         article.put(Article.ARTICLE_UA, ua);
 
-        final JSONObject currentUser = (JSONObject) request.getAttribute(User.USER);
+        final JSONObject currentUser = (JSONObject) request.getAttribute(Common.CURRENT_USER);
         if (null == currentUser
                 || !currentUser.optString(Keys.OBJECT_ID).equals(oldArticle.optString(Article.ARTICLE_AUTHOR_ID))) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
@@ -1205,14 +1191,13 @@ public class ArticleProcessor {
      * </pre>
      * </p>
      *
-     * @param request  the specified http servlet request
-     * @param response the specified http servlet response
-     * @param context  the specified http request context
+     * @param request the specified http servlet request
+     * @param context the specified http request context
      */
     @RequestProcessing(value = "/markdown", method = HTTPRequestMethod.POST)
     @Before(adviceClass = StopwatchStartAdvice.class)
     @After(adviceClass = StopwatchEndAdvice.class)
-    public void markdown2HTML(final HttpServletRequest request, final HttpServletResponse response, final HTTPRequestContext context) {
+    public void markdown2HTML(final HttpServletRequest request, final HTTPRequestContext context) {
         context.renderJSON(true);
         String markdownText = request.getParameter("markdownText");
         if (StringUtils.isBlank(markdownText)) {
@@ -1278,7 +1263,7 @@ public class ArticleProcessor {
     @After(adviceClass = StopwatchEndAdvice.class)
     public void reward(final HttpServletRequest request, final HttpServletResponse response, final HTTPRequestContext context)
             throws Exception {
-        final JSONObject currentUser = userQueryService.getCurrentUser(request);
+        final JSONObject currentUser = (JSONObject) request.getAttribute(Common.CURRENT_USER);
         if (null == currentUser) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
 
@@ -1322,7 +1307,7 @@ public class ArticleProcessor {
     @After(adviceClass = StopwatchEndAdvice.class)
     public void thank(final HttpServletRequest request, final HttpServletResponse response, final HTTPRequestContext context)
             throws Exception {
-        final JSONObject currentUser = userQueryService.getCurrentUser(request);
+        final JSONObject currentUser = (JSONObject) request.getAttribute(Common.CURRENT_USER);
         if (null == currentUser) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
 
@@ -1362,7 +1347,7 @@ public class ArticleProcessor {
     @After(adviceClass = StopwatchEndAdvice.class)
     public void stickArticle(final HttpServletRequest request, final HttpServletResponse response, final HTTPRequestContext context)
             throws Exception {
-        final JSONObject currentUser = userQueryService.getCurrentUser(request);
+        final JSONObject currentUser = (JSONObject) request.getAttribute(Common.CURRENT_USER);
         if (null == currentUser) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
 

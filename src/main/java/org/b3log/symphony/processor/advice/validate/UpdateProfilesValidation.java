@@ -20,9 +20,8 @@ package org.b3log.symphony.processor.advice.validate;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.b3log.latke.Keys;
-import org.b3log.latke.ioc.inject.Inject;
-import org.b3log.latke.ioc.inject.Named;
-import org.b3log.latke.ioc.inject.Singleton;
+import org.b3log.latke.ioc.Inject;
+import org.b3log.latke.ioc.Singleton;
 import org.b3log.latke.model.User;
 import org.b3log.latke.service.LangPropsService;
 import org.b3log.latke.servlet.HTTPRequestContext;
@@ -30,6 +29,7 @@ import org.b3log.latke.servlet.advice.BeforeRequestProcessAdvice;
 import org.b3log.latke.servlet.advice.RequestProcessAdviceException;
 import org.b3log.latke.util.Requests;
 import org.b3log.latke.util.Strings;
+import org.b3log.symphony.model.Common;
 import org.b3log.symphony.model.Role;
 import org.b3log.symphony.model.Tag;
 import org.b3log.symphony.model.UserExt;
@@ -48,7 +48,6 @@ import java.util.Map;
  * @version 2.2.2.5, Sep 6, 2016
  * @since 0.2.0
  */
-@Named
 @Singleton
 public class UpdateProfilesValidation extends BeforeRequestProcessAdvice {
 
@@ -153,7 +152,7 @@ public class UpdateProfilesValidation extends BeforeRequestProcessAdvice {
                     throw new RequestProcessAdviceException(new JSONObject().put(Keys.MSG, tagErrMsg));
                 }
 
-                final JSONObject currentUser = (JSONObject) request.getAttribute(User.USER);
+                final JSONObject currentUser = (JSONObject) request.getAttribute(Common.CURRENT_USER);
                 if (!Role.ROLE_ID_C_ADMIN.equals(currentUser.optString(User.USER_ROLE))
                         && ArrayUtils.contains(Symphonys.RESERVED_TAGS, tagTitle)) {
                     throw new RequestProcessAdviceException(new JSONObject().put(Keys.MSG,

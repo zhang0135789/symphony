@@ -18,9 +18,8 @@
 package org.b3log.symphony.processor.advice;
 
 import org.b3log.latke.Keys;
-import org.b3log.latke.ioc.inject.Inject;
-import org.b3log.latke.ioc.inject.Named;
-import org.b3log.latke.ioc.inject.Singleton;
+import org.b3log.latke.ioc.Inject;
+import org.b3log.latke.ioc.Singleton;
 import org.b3log.latke.logging.Level;
 import org.b3log.latke.logging.Logger;
 import org.b3log.latke.model.User;
@@ -32,6 +31,7 @@ import org.b3log.latke.servlet.advice.RequestProcessAdviceException;
 import org.b3log.latke.servlet.handler.MatchResult;
 import org.b3log.latke.servlet.handler.RequestDispatchHandler;
 import org.b3log.latke.util.Stopwatchs;
+import org.b3log.symphony.model.Common;
 import org.b3log.symphony.model.Permission;
 import org.b3log.symphony.model.Role;
 import org.b3log.symphony.service.RoleQueryService;
@@ -50,7 +50,6 @@ import java.util.*;
  * @version 1.0.1.0, May 1, 2018
  * @since 1.8.0
  */
-@Named
 @Singleton
 public class PermissionCheck extends BeforeRequestProcessAdvice {
 
@@ -130,7 +129,7 @@ public class PermissionCheck extends BeforeRequestProcessAdvice {
                 return;
             }
 
-            final JSONObject user = (JSONObject) request.getAttribute(User.USER);
+            final JSONObject user = (JSONObject) request.getAttribute(Common.CURRENT_USER);
             final String roleId = null != user ? user.optString(User.USER_ROLE) : Role.ROLE_ID_C_VISITOR;
             final Set<String> grantPermissions = roleQueryService.getPermissions(roleId);
 

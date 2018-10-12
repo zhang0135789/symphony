@@ -19,13 +19,13 @@ package org.b3log.symphony.service;
 
 import jodd.http.HttpRequest;
 import jodd.http.HttpResponse;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.b3log.latke.Keys;
-import org.b3log.latke.ioc.inject.Inject;
+import org.b3log.latke.ioc.Inject;
 import org.b3log.latke.logging.Level;
 import org.b3log.latke.logging.Logger;
 import org.b3log.latke.repository.RepositoryException;
 import org.b3log.latke.repository.Transaction;
-import org.b3log.latke.repository.annotation.Transactional;
 import org.b3log.latke.service.annotation.Service;
 import org.b3log.symphony.model.Link;
 import org.b3log.symphony.repository.LinkRepository;
@@ -38,19 +38,19 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Link ping management service.
+ * Link management service.
  *
  * @author <a href="http://88250.b3log.org">Liang Ding</a>
- * @version 1.0.0.0, Aug 21, 2018
+ * @version 1.0.0.2, Oct 4, 2018
  * @since 3.2.0
  */
 @Service
-public class LinkPingMgmtService {
+public class LinkMgmtService {
 
     /**
      * Logger.
      */
-    private static final Logger LOGGER = Logger.getLogger(LinkPingMgmtService.class);
+    private static final Logger LOGGER = Logger.getLogger(LinkMgmtService.class);
 
     /**
      * Link repository.
@@ -94,7 +94,9 @@ public class LinkPingMgmtService {
         }
 
         link = new JSONObject();
-        link.put(Link.LINK_ADDR, lnk.optString(Link.LINK_ADDR));
+        final String addr = lnk.optString(Link.LINK_ADDR);
+        link.put(Link.LINK_ADDR_HASH, DigestUtils.sha1Hex(addr));
+        link.put(Link.LINK_ADDR, addr);
         link.put(Link.LINK_BAD_CNT, 0);
         link.put(Link.LINK_BAIDU_REF_CNT, 0);
         link.put(Link.LINK_CLICK_CNT, clickCnt);
@@ -108,30 +110,6 @@ public class LinkPingMgmtService {
         link.put(Link.LINK_CARD_HTML, "");
 
         addLink(link);
-    }
-
-    /**
-     * Adds the specified link with card HTML.
-     *
-     * @param link the specified link
-     */
-    @Transactional
-    public void addLinkCard(final JSONObject link) {
-        try {
-            final String linkAddr = link.optString(Link.LINK_ADDR);
-            final JSONObject old = linkRepository.getLink(linkAddr);
-            if (null != old) {
-                old.put(Link.LINK_CARD_HTML, link.optString(Link.LINK_CARD_HTML));
-
-                linkRepository.update(link.optString(Keys.OBJECT_ID), old);
-
-                return;
-            }
-
-            linkRepository.add(link);
-        } catch (final Exception e) {
-            LOGGER.log(Level.ERROR, "Adds a link with card failed", e);
-        }
     }
 
     /**

@@ -19,12 +19,10 @@ package org.b3log.symphony.util;
 
 import org.apache.commons.io.IOUtils;
 import org.b3log.latke.Latkes;
-import org.b3log.latke.ioc.LatkeBeanManager;
-import org.b3log.latke.ioc.Lifecycle;
+import org.b3log.latke.ioc.BeanManager;
 import org.b3log.latke.logging.Logger;
 import org.b3log.latke.repository.jdbc.JdbcRepository;
 import org.b3log.latke.service.LangPropsService;
-import org.b3log.latke.service.LangPropsServiceImpl;
 import org.b3log.symphony.SymphonyServletListener;
 import org.b3log.symphony.model.Common;
 import org.b3log.symphony.model.Option;
@@ -50,7 +48,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  * Symphony utilities.
  *
  * @author <a href="http://88250.b3log.org">Liang Ding</a>
- * @version 1.8.0.0, Sep 14, 2018
+ * @version 1.8.0.1, Sep 20, 2018
  * @since 0.1.0
  */
 public final class Symphonys {
@@ -61,9 +59,9 @@ public final class Symphonys {
     public static final ResourceBundle CFG = ResourceBundle.getBundle("symphony");
 
     /**
-     * HacPai bot User-Agent.
+     * User-Agent.
      */
-    public static final String USER_AGENT_BOT = "Mozilla/5.0 (compatible; Sym/" + SymphonyServletListener.VERSION + "; +" + Latkes.getServePath() + ")";
+    public static final String USER_AGENT_BOT = "Sym/" + SymphonyServletListener.VERSION + "; +https://github.com/b3log/symphony";
 
     /**
      * Reserved tags.
@@ -158,7 +156,7 @@ public final class Symphonys {
 
                 HttpURLConnection httpConn = null;
                 try {
-                    final LatkeBeanManager beanManager = Lifecycle.getBeanManager();
+                    final BeanManager beanManager = BeanManager.getInstance();
                     final OptionQueryService optionQueryService = beanManager.getReference(OptionQueryService.class);
 
                     final JSONObject statistic = optionQueryService.getStatistic();
@@ -167,7 +165,7 @@ public final class Symphonys {
                         return;
                     }
 
-                    final LangPropsService langPropsService = beanManager.getReference(LangPropsServiceImpl.class);
+                    final LangPropsService langPropsService = beanManager.getReference(LangPropsService.class);
 
                     httpConn = (HttpURLConnection) new URL("https://rhythm.b3log.org/sym").openConnection();
                     httpConn.setConnectTimeout(10000);
@@ -221,15 +219,6 @@ public final class Symphonys {
      */
     public static int getMaxThreadCount() {
         return EXECUTOR_SERVICE.getMaximumPoolSize();
-    }
-
-    /**
-     * Does Symphony runs on development environment?
-     *
-     * @return {@code true} if it runs on development environment, {@code false} otherwise
-     */
-    public static boolean runsOnDevEnv() {
-        return Latkes.RuntimeMode.DEVELOPMENT == Latkes.getRuntimeMode();
     }
 
     /**
